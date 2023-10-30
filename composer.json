@@ -1,0 +1,35 @@
+{
+    "name": "carminerumma/yousign-laravel",
+    "version": "1.0",
+    "description": "Package for using Yousign Api with Laravel > 7.x",
+    "keywords": ["yousign", "laravel", "signature", "php"],
+    "homepage": "https://carminerumma.it",
+    "type": "library",
+    "license": "MIT",
+    "authors": [        
+        {
+            "name": "Carmine Rumma",
+            "email": "info@carminerumma.it"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"CarmineRumma\\YousignLaravel\\": "src/"}
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CarmineRumma\\YousignLaravel\\YousignLaravelServiceProvider"
+            ],
+            "aliases": {
+                "YousignLaravel": "CarmineRumma\\YousignLaravel\\Facades\\YousignLaravel"
+            }
+        }
+    },
+    "require": {
+        "php": ">=7.4",
+        "netresearch/jsonmapper": "^4.2",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
