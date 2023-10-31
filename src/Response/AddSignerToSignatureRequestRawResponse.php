@@ -10,15 +10,15 @@ class AddSignerToSignatureRequestRawResponse
   public string $id;
   public Info $info;
   public string $status;
-  public $signatureLink;
-  public $signatureLinkExpirationDate;
-  public string $signatureImagePreview;
+  public $signature_link;
+  public $signature_link_expiration_date;
+  public string $signature_image_preview;
   public $fields;
-  public string $signatureLevel;
-  public string $signatureAuthenticationMode;
-  public RedirectUrls $redirectUrls;
-  public CustomText $customText;
-  public $deliveryMode;
+  public string $signature_level;
+  public string $signature_authentication_mode;
+  public RedirectUrls $redirect_urls;
+  public CustomText $custom_text;
+  public $delivery_mode;
 
   /*
   public function __construct(

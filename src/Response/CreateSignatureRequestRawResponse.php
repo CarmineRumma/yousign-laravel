@@ -5,27 +5,27 @@ use CarmineRumma\YousignLaravel\Models\ReminderSettings;
 
 class CreateSignatureRequestRawResponse
 {
-  public EmailNotification $emailNotification;
+  public EmailNotification $email_notification;
   public string $id;
   public string $source;
   public string $status;
   public string $name;
-  public string $createdAt;
-  public ?string $emailCustomNote;
-  public bool $orderedSigners;
+  public string $created_at;
+  public ?string $email_custom_note;
+  public bool $ordered_signers;
   public string $timezone;
-  public ReminderSettings $reminderSettings;
-  public string $expirationDate;
-  public string $deliveryMode;
+  public ReminderSettings $reminder_settings;
+  public string $expiration_date;
+  public string $delivery_mode;
   public array $documents;
   public array $signers;
-  public string $externalId;
-  public ?string $brandingId;
-  public ?string $customExperienceId;
+  public ?string $external_id;
+  public ?string $branding_id;
+  public ?string $custom_experience_id;
   public ?string $sender;
-  public string $workspaceId;
-  public string $auditTrailLocale;
-  public bool $signersAllowedToDecline;
+  public string $workspace_id;
+  public string $audit_trail_locale;
+  public bool $signers_allowed_to_decline;
   /*
   public function __construct(
     EmailNotification $emailNotification,

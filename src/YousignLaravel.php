@@ -4,6 +4,7 @@ namespace CarmineRumma\YousignLaravel;
 
 use CarmineRumma\YousignLaravel\Request\CreateSignatureRequest;
 use CarmineRumma\YousignLaravel\Response\AddDocumentToSignatureRequestRawResponse;
+use CarmineRumma\YousignLaravel\Response\AddSignerToSignatureRequestRawResponse;
 use CarmineRumma\YousignLaravel\Response\CreateSignatureRequestRawResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -20,6 +21,8 @@ class YousignLaravel {
       'staging' => "https://staging-api.yousign.com",
     ];
 
+    const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'it', 'nl', 'es', 'pl'];
+
     protected $baseUrl;
     protected $baseUrlWithoutSlash;
     protected $apiKey;
@@ -33,6 +36,8 @@ class YousignLaravel {
      * @var \JsonMapper
      */
     protected $mapper;
+
+    protected $locale = 'en';
 
     protected $_procedure = array(
         'name' => '',
@@ -96,6 +101,15 @@ class YousignLaravel {
      */
     private function setBearerToken($apiKey) {
         $this->apiKey = $apiKey;
+    }
+
+    /**
+     * Set LOCALE
+     * @param $apiKey
+     */
+    public function setLocale($str) {
+      $this->locale = $str;
+      return $this;
     }
 
     /**
@@ -219,14 +233,15 @@ class YousignLaravel {
            // dd($options);
           }
          // $options['debug'] = true;
+          if ($mapToClass == AddSignerToSignatureRequestRawResponse::class) {
+
+            //dd($params);
+          }
           $response = $this->client->request($method, $baseUrl . '/' . $path, $options);
 
           $contents = $response->getBody()->getContents();
           $contentsObj = json_decode($contents);
-          if ($mapToClass == AddDocumentToSignatureRequestRawResponse::class) {
 
-            //dd($contentsObj);
-          }
           if ($mapToClass) {
             return $this->mapper->map($contentsObj, $mapToClass);
           }
@@ -289,7 +304,7 @@ class YousignLaravel {
           'multipart' => [
             [
               'name' => 'nature',
-              'contents' => 'attachment'
+              'contents' => 'signable_document' //'attachment'
             ],
             [
               'name'     => 'file',
@@ -301,60 +316,46 @@ class YousignLaravel {
     }
 
     /**
-     * @params name string name of the file
-     * @params content string s3Filename
-     * @params procedureId string the procedure id from yousign
-     * @params isAttachment boolean if the file is only readonly not for a signature
-     * @return mixed
-     */
-    public function addFile($name, $content, $procedureId = null, $isAttachment = false) {
-        $method = 'POST';
-        $path = 'files';
-
-        $data = file_get_contents($content);
-        $b64Doc = base64_encode($data);
-
-        $parameters = array(
-            'name'      => $name,
-            'content'   => $b64Doc,
-            'procedure' => $procedureId,
-            'type'      => $isAttachment ? 'attachment' : 'signable'
-        );
-        return $this->doRequest($path, $method, $parameters);
-    }
-
-    /**
      * @params firstname string
      * @params lastname string
      * @params email string
      * @params phone string
-     * @params procedureId string
-     * @params type string (default = 'signer') other 'validator'
-     * @params position integer To determine the position of the signer for ordered procedure see https://dev.yousign.com/#dfe29009-0f87-41d4-a16d-3dbbb7e9c1db
+     * @params documentId string
      *
-     * @return mixed
+     * @return AddSignerToSignatureRequestRawResponse
      */
+    public function addSigner($firstname, $lastname, $email, $phone, $documentId) {
+      if (is_null($this->signatureRequest)) {
+        throw new \Exception('Create a Signature Request before');
+      }
+      $method = 'POST';
+        $path = 'signature_requests/' . $this->signatureRequest->id . '/signers';
 
-    public function addMember($firstname, $lastname, $email, $phone, $procedureId = null, $type = "signer", $position = null) {
-        $method = 'POST';
-        $path = 'members';
-
-        $member = array(
-            "firstname" => $firstname,
-            "lastname" => $lastname,
+        $info = array(
+            "first_name" => $firstname,
+            "last_name" => $lastname,
             "email" => $email,
-            "phone" => $phone,
-            "procedure" => $procedureId,
-            "type" => $type,
-            "operationLevel" => "custom",
-            "operationModeSmsConfig" => $this->_operationModeSmsConfig,
+            "phone_number" => $phone,
+            "locale" => $this->locale
+        );
+        $fields = array(
+          array(
+            'document_id' => $documentId,
+            'type' => 'signature',
+            'page' => 1,
+            'x' => 0,
+            'y' => 0,
+          ),
         );
 
-        if (!is_null($position)) {
-            $member["position"] = $position;
-        }
-
-        return $this->doRequest($path, $method, $member);
+        $params = [
+          "info" => $info,
+          "fields" => $fields,
+          'signature_level' => 'electronic_signature',
+          'signature_authentication_mode' => 'otp_email', //otp_sms
+          'delivery_mode' => 'email'
+        ];
+        return $this->doRequest($path, $method, $params, true, AddSignerToSignatureRequestRawResponse::class);
     }
 
     /**
