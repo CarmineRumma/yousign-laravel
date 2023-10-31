@@ -1,31 +1,25 @@
 <?php
 namespace CarmineRumma\YousignLaravel\Response;
-use CarmineRumma\YousignLaravel\Models\EmailNotification;
-use CarmineRumma\YousignLaravel\Models\ReminderSettings;
 
-class CreateSignatureRequestRawResponse
+use CarmineRumma\YousignLaravel\Models\CustomText;
+use CarmineRumma\YousignLaravel\Models\Info;
+use CarmineRumma\YousignLaravel\Models\RedirectUrls;
+
+class AddSignerToSignatureRequestRawResponse
 {
-  public EmailNotification $emailNotification;
   public string $id;
-  public string $source;
+  public Info $info;
   public string $status;
-  public string $name;
-  public string $createdAt;
-  public ?string $emailCustomNote;
-  public bool $orderedSigners;
-  public string $timezone;
-  public ReminderSettings $reminderSettings;
-  public string $expirationDate;
-  public string $deliveryMode;
-  public array $documents;
-  public array $signers;
-  public string $externalId;
-  public ?string $brandingId;
-  public ?string $customExperienceId;
-  public ?string $sender;
-  public string $workspaceId;
-  public string $auditTrailLocale;
-  public bool $signersAllowedToDecline;
+  public $signatureLink;
+  public $signatureLinkExpirationDate;
+  public string $signatureImagePreview;
+  public $fields;
+  public string $signatureLevel;
+  public string $signatureAuthenticationMode;
+  public RedirectUrls $redirectUrls;
+  public CustomText $customText;
+  public $deliveryMode;
+
   /*
   public function __construct(
     EmailNotification $emailNotification,

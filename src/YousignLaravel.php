@@ -1,19 +1,31 @@
-<?php namespace CarmineRumma\YousignLaravel;
+<?php
+
+namespace CarmineRumma\YousignLaravel;
 
 use CarmineRumma\YousignLaravel\Request\CreateSignatureRequest;
+use CarmineRumma\YousignLaravel\Response\AddDocumentToSignatureRequestRawResponse;
 use CarmineRumma\YousignLaravel\Response\CreateSignatureRequestRawResponse;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7;
+use \Symfony\Component\HttpFoundation\File\File;
 
 class YousignLaravel {
+
+    /**
+     * @const string
+     */
+    const BASE_URI = [
+      'production' => "https://api.yousign.com",
+      'staging' => "https://staging-api.yousign.com",
+    ];
 
     protected $baseUrl;
     protected $baseUrlWithoutSlash;
     protected $apiKey;
 
     /**
-     * @var \GuzzleHttp\Client
+     * @var Client
      */
     protected $client;
 
@@ -51,31 +63,11 @@ class YousignLaravel {
       'external_id' => null, // External ID will be added to webhooks & appended to redirect urls.
     );
 
-    protected $_doc2signature = array(
-      'multipart' => [
-          [
-            'name' => 'nature',
-            'contents' => 'attachment'
-          ],
-          [
-            'name' => 'alignment',
-            'contents' => 'right'
-          ],
-          [
-            'name' => 'y',
-            'contents' => '100'
-          ],
-          [
-            'name' => 'file',
-            'filename' => '1692974628_cocacola_invoice.pdf',
-            'contents' => ''
-          ],
-          [
-            'name' => 'parse_anchors',
-            'contents' => 'false'
-          ],
-      ]
-    );
+    /**
+     * @var CreateSignatureRequestRawResponse
+     */
+    private $signatureRequest = null;
+
 
     protected $_webhook = array(
 
@@ -91,8 +83,11 @@ class YousignLaravel {
         $this->apiBaseUrl = env('YOUSIGN_API_URL');
         $this->baseUrlWithoutSlash = substr(env('YOUSIGN_API_URL'), 0, -1);
 
-        $this->client = new \GuzzleHttp\Client();
+        $this->client = new Client(['expect' => false]);
         $this->mapper = new \JsonMapper();
+        $this->mapper->bExceptionOnMissingData = false;
+        $this->mapper->bExceptionOnUndefinedProperty = false;
+        $this->mapper->bStrictNullTypes = false;
     }
 
     /**
@@ -114,9 +109,10 @@ class YousignLaravel {
     }
 
     /**
-     * Set procedure key/value
-     *
-     * @param $apiKey
+     * Set Signature Request key/value
+     * @param $key
+     * @param $value
+     * @return void
      */
     public function setSignatureRequestProperty($key, $value) {
       $this->_signature[$key] = $value;
@@ -197,7 +193,7 @@ class YousignLaravel {
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \JsonMapper_Exception
      */
-    public function doRequest($path, $method, $params = [], $removeSlash = false, $mapToClass = null)
+    public function doRequest($path, $method, $params = [], $removeSlash = false, $mapToClass = null, $contentType = 'application/json', $multipart = false)
     {
         if ($removeSlash) {
             $baseUrl = $this->baseUrlWithoutSlash;
@@ -206,24 +202,38 @@ class YousignLaravel {
         }
 
         try {
-//dd($params);
-          $response = $this->client->request($method, $baseUrl . '/' . $path, [
+
+          $headers = [
+            'Authorization' => 'Bearer ' . $this->getBearerToken(),
+            'Accept' => 'application/json',
+            'content-type' => $contentType, //'application/json'
+          ];
+          $options = [
             'body' => json_encode($params),
-            'headers' => [
-              'authorization' => 'Bearer ' . $this->getBearerToken(),
-              'accept' => 'application/json',
-              'content-type' => 'application/json',
-            ],
-          ]);
+            'headers' => $headers
+          ];
+
+          if ($multipart) {
+            unset($headers['content-type']);
+            $options = array_merge($params, ['headers' => $headers]);
+           // dd($options);
+          }
+         // $options['debug'] = true;
+          $response = $this->client->request($method, $baseUrl . '/' . $path, $options);
 
           $contents = $response->getBody()->getContents();
           $contentsObj = json_decode($contents);
+          if ($mapToClass == AddDocumentToSignatureRequestRawResponse::class) {
+
+            //dd($contentsObj);
+          }
           if ($mapToClass) {
             return $this->mapper->map($contentsObj, $mapToClass);
           }
           return $contentsObj;
 
-        } catch (RequestException $e) {
+        } catch (ClientException $e) {
+            print ($e->getMessage()); die;
             abort($response->status(), $response->body(), ['Content-Type: application/json']);
         }
 
@@ -233,7 +243,6 @@ class YousignLaravel {
      * @parms
      * @return mixed
      */
-
     public function createProcedure() {
         $method = 'POST';
         $path = 'procedures';
@@ -251,19 +260,44 @@ class YousignLaravel {
       $path = 'signature_requests';
 
       //$this->_procedure['config']['webhook'] = $this->_webhook;
-      return $this->doRequest($path, $method, $this->_signature, CreateSignatureRequestRawResponse::class);
+      $this->signatureRequest = $this->doRequest($path, $method, $this->_signature, false,CreateSignatureRequestRawResponse::class);
+      return $this;
     }
 
+
     /**
-     * @params
-     * @return mixed
+     * addDocumentToSignatureRequest
+     * @return CreateSignatureRequestRawResponse
      */
+    public function addDocumentToSignatureRequest($doc) {
+      if (is_null($this->signatureRequest)) {
+        throw new \Exception('Create a Signature Request before');
+      }
+      $method = 'POST';
+      $path = 'signature_requests/' . $this->signatureRequest->id . '/documents';
 
-    public function getProcedure($procedureId) {
-        $method = 'GET';
-        $path = 'procedures';
+      $file = new File(storage_path('app/public/') . $doc->attachment);
+      /*
+      $data = file_get_contents(
+        storage_path('app/public/') . $doc->attachment
+      );
+      $b64Doc = base64_encode($data);
+      */
 
-        $this->doRequest($path . '/' . $procedureId, $method);
+      //$this->_procedure['config']['webhook'] = $this->_webhook;
+       return $this->doRequest($path, $method, [
+          'multipart' => [
+            [
+              'name' => 'nature',
+              'contents' => 'attachment'
+            ],
+            [
+              'name'     => 'file',
+              'contents' => Psr7\Utils::tryFopen($file->getPathname(), 'r')
+            ]
+          ]
+      ], true, AddDocumentToSignatureRequestRawResponse::class, 'application/json', true);
+
     }
 
     /**
@@ -273,7 +307,6 @@ class YousignLaravel {
      * @params isAttachment boolean if the file is only readonly not for a signature
      * @return mixed
      */
-
     public function addFile($name, $content, $procedureId = null, $isAttachment = false) {
         $method = 'POST';
         $path = 'files';
@@ -282,10 +315,10 @@ class YousignLaravel {
         $b64Doc = base64_encode($data);
 
         $parameters = array(
-            'name' => $name,
-            'content' => $b64Doc,
+            'name'      => $name,
+            'content'   => $b64Doc,
             'procedure' => $procedureId,
-            'type' => $isAttachment ? 'attachment' : 'signable'
+            'type'      => $isAttachment ? 'attachment' : 'signable'
         );
         return $this->doRequest($path, $method, $parameters);
     }
