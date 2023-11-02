@@ -15,7 +15,7 @@ Library to use YouSign API from doc (dev.yousign.com) with Laravel
 You can install the package via composer:
 
 ```bash
-composer require CarmineRumma/laravel-yousign
+composer require carminerumma/yousign-laravel
 ```
 
 The service provider will automatically register itself.

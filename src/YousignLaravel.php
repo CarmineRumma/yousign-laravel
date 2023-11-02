@@ -18,8 +18,8 @@ class YousignLaravel {
      * @const string
      */
     const BASE_URI = [
-      'production' => "https://api.yousign.com",
-      'staging' => "https://staging-api.yousign.com",
+      'production'  => "https://api.yousign.app/v3/",
+      'staging'     => "https://api-sandbox.yousign.app/v3/",
     ];
 
     /**
@@ -36,9 +36,6 @@ class YousignLaravel {
      * @var string
      */
     private $apiEnv;
-
-    protected $baseUrl;
-    protected $baseUrlWithoutSlash;
 
     /**
      * @var Client
@@ -85,16 +82,17 @@ class YousignLaravel {
     );
 
     public function __construct() {
-        $this->setBearerToken(env('YOUSIGN_KEY'));
-        $this->apiBaseUrl = env('YOUSIGN_API_URL');
-        $this->baseUrlWithoutSlash = substr(env('YOUSIGN_API_URL'), 0, -1);
+        //$this->setBearerToken(env('YOUSIGN_KEY'));
+        //$this->apiBaseUrl = env('YOUSIGN_API_URL');
+        //$this->baseUrlWithoutSlash = substr(env('YOUSIGN_API_URL'), 0, -1);
 
         $this->setApiKey(config('yousign.api_key'));
         $this->setApiEnv(config('yousign.api_env'));
+
         $this->client = new Client([
           'expect' => false,
           'base_uri' => $this->getBaseURL(),
-          'headers' => [
+           'headers' => [
             'Authorization' => "Bearer {$this->apiKey}",
             'Content-Type' => 'application/json',
           ]
@@ -144,14 +142,6 @@ class YousignLaravel {
     protected function getApiEnv()
     {
       return $this->apiEnv;
-    }
-
-    /**
-     * Set API KEY from Yousign
-     * @param $apiKey
-     */
-    private function setBearerToken($apiKey) {
-        $this->apiKey = $apiKey;
     }
 
     /**
@@ -232,13 +222,6 @@ class YousignLaravel {
     }
 
     /**
-     * @return mixed
-     */
-    public function getBearerToken() {
-        return $this->apiKey;
-    }
-
-    /**
      * @param $path
      * @param $method
      * @param $params
@@ -248,35 +231,19 @@ class YousignLaravel {
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \JsonMapper_Exception
      */
-    public function doRequest($path, $method, $params = [], $removeSlash = false, $mapToClass = null, $contentType = 'application/json', $multipart = false)
+    public function doRequest($path, $method, $params = [], $mapToClass = null, $multipart = false)
     {
-        if ($removeSlash) {
-            $baseUrl = $this->baseUrlWithoutSlash;
-        } else {
-            $baseUrl = $this->apiBaseUrl;
-        }
-
         try {
 
-          $headers = [
-            'Authorization' => 'Bearer ' . $this->getBearerToken(),
-            'Accept' => 'application/json',
-            'content-type' => $contentType, //'application/json'
-          ];
-
           $options = [
-            'body' => json_encode($params),
-            'headers' => $headers
+            'body' => json_encode($params)
           ];
 
           if ($multipart) {
-            unset($headers['content-type']);
-            $options = array_merge($params, ['headers' => $headers]);
-           // dd($options);
+            $options = $params;
           }
-          //$response = $this->client->request($method, $baseUrl . '/' . $path, $options);
           $response = $this->client->request($method, $path, $options);
-
+          // dd($response);
           $contents = $response->getBody()->getContents();
           $contentsObj = json_decode($contents);
 
@@ -293,18 +260,6 @@ class YousignLaravel {
     }
 
     /**
-     * @parms
-     * @return mixed
-     */
-    public function createProcedure() {
-        $method = 'POST';
-        $path = 'procedures';
-
-        $this->_procedure['config']['webhook'] = $this->_webhook;
-        return $this->doRequest($path, $method, $this->_procedure);
-    }
-
-    /**
      * createSignatureRequest
      * @return CreateSignatureRequestRawResponse
      */
@@ -313,10 +268,9 @@ class YousignLaravel {
       $path = 'signature_requests';
 
       //$this->_procedure['config']['webhook'] = $this->_webhook;
-      $this->signatureRequest = $this->doRequest($path, $method, $this->_signature, false,CreateSignatureRequestRawResponse::class);
+      $this->signatureRequest = $this->doRequest($path, $method, $this->_signature, CreateSignatureRequestRawResponse::class);
       return $this;
     }
-
 
     /**
      * addDocumentToSignatureRequest
@@ -349,7 +303,7 @@ class YousignLaravel {
               'contents' => Psr7\Utils::tryFopen($file->getPathname(), 'r')
             ]
           ]
-      ], true, AddDocumentToSignatureRequestRawResponse::class, 'application/json', true);
+      ], AddDocumentToSignatureRequestRawResponse::class, true);
 
     }
 
@@ -393,7 +347,7 @@ class YousignLaravel {
           'signature_authentication_mode' => 'otp_email', //otp_sms
           'delivery_mode' => 'email'
         ];
-        return $this->doRequest($path, $method, $params, true, AddSignerToSignatureRequestRawResponse::class);
+        return $this->doRequest($path, $method, $params, AddSignerToSignatureRequestRawResponse::class);
     }
 
     /**
@@ -409,86 +363,8 @@ class YousignLaravel {
 
       //$this->_procedure['config']['webhook'] = $this->_webhook;
       return $this->doRequest($path, $method, [
-      ], true, ActivateSignatureRequestRawResponse::class, 'application/json', true);
+      ], true, ActivateSignatureRequestRawResponse::class);
 
-    }
-
-    /**
-     * @params fileId string
-     * @params memberId string
-     * @params position string positionning signature see https://placeit.yousign.fr/
-     * @params reason string see https://dev.yousign.com/#ba613ed7-08fa-45ea-9b5f-5e850aa367dc
-     * @params procedureId string
-     * @params page int num page where to put the signature
-     * @params type int (2 types of fields: signature (default value) or text which will be used for text fields.)
-     * @params contentRequired bool see https://dev.yousign.com/#3e7c6772-e92a-4b3d-98d0-84c22a64f3d7
-     * @params content string|null see https://dev.yousign.com/#3e7c6772-e92a-4b3d-98d0-84c22a64f3d7
-     * @params mention1 string
-     * @params mention2 string
-     *
-     * @return mixed
-     */
-
-    public function addFileObject($fileId, $memberId, $position, $reason, $page, $type = 'signature', $contentRequired = true, $content = null, $mention = null, $mention2 = null) {
-        $method = 'POST';
-        $path = 'file_objects';
-
-        $parameter = array(
-            "file" => $fileId,
-            "member" => $memberId,
-            "position" => $position,
-            "page" => $page,
-            "mention" => $mention,
-            "mention2" => $mention2,
-            "reason" => $reason,
-            "content" => $content,
-            "contentRequired" => $contentRequired,
-        );
-
-        return $this->doRequest($path, $method, $parameter);
-    }
-
-    /**
-     *  used for start the procedure and get signature list
-     *
-     */
-
-    public function launchProcedure($procedureId) {
-        $method = 'PUT';
-
-        $parameter = array(
-            'start' => true
-        );
-
-        // remove slash because the id is /procedure/id-XXXXXXXX
-        return $this->doRequest($procedureId, $method, $parameter, true);
-    }
-
-    /**
-     *  Consumption
-     */
-
-    public function consumption() {
-        $method = 'PUT';
-        $path = 'consumptions/metrics';
-
-        return $this->doRequest($path, $method);
-    }
-
-    /**
-     *  getFileSigned
-     */
-
-    public function fileSigned($fileId, $binaryMode = true) {
-        $method = 'GET';
-
-        if ($binaryMode) {
-            $path =  $fileId . "/download?alt=media";
-        } else{
-            $path =  $fileId . "/download";
-        }
-
-        return $this->doRequest($path, $method, [], true, true);
     }
 
 }
