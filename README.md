@@ -40,18 +40,18 @@ return [
 
 Lists all users:
 ```php
-use CarmineRumma\YousignLaravel\Facades\Yousign;
+use CarmineRumma\YousignLaravel\YousignLaravel;
 
-$users = Yousign::getUsers();
+$users = YousignLaravel::getUsers();
 ```
 
 ### Procedure
 
 Send a file:
 ```php
-use AlexisRiot\Yousign\Facades\Yousign;
+use CarmineRumma\YousignLaravel\YousignLaravel;
 
-$file = Yousign::createFile([
+$file = YousignLaravel::createFile([
     "name" => "devis.pdf",
     "content" => "JVBERi0xLjUKJb/3ov4KNiA...",
 ]);
@@ -60,10 +60,9 @@ $file = Yousign::createFile([
 Create a procedure:
 _The creation of a procedure is fully dynamic, you can add multiple members and multiple files._
 ```php
-use AlexisRiot\Yousign\Facades\Yousign;
-use AlexisRiot\Yousign\YousignProcedure;
+use CarmineRumma\YousignLaravel\YousignLaravel;
 
-$file = Yousign::createFile([
+$file = YousignLaravel::createFile([
     "name" => "devis.pdf",
     "content" => "JVBERi0xLjUKJb/3ov4KNiA...",
 ]);
