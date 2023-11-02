@@ -3,6 +3,7 @@
 namespace CarmineRumma\YousignLaravel;
 
 use CarmineRumma\YousignLaravel\Request\CreateSignatureRequest;
+use CarmineRumma\YousignLaravel\Response\ActivateSignatureRequestRawResponse;
 use CarmineRumma\YousignLaravel\Response\AddDocumentToSignatureRequestRawResponse;
 use CarmineRumma\YousignLaravel\Response\AddSignerToSignatureRequestRawResponse;
 use CarmineRumma\YousignLaravel\Response\CreateSignatureRequestRawResponse;
@@ -14,13 +15,16 @@ use \Symfony\Component\HttpFoundation\File\File;
 class YousignLaravel {
 
     /**
-     * @const string
+     * @const BASE_URI
      */
     const BASE_URI = [
       'production' => "https://api.yousign.com",
       'staging' => "https://staging-api.yousign.com",
     ];
 
+    /**
+     * @const SUPPORTED_LOCALES
+     */
     const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'it', 'nl', 'es', 'pl'];
 
     protected $baseUrl;
@@ -222,6 +226,7 @@ class YousignLaravel {
             'Accept' => 'application/json',
             'content-type' => $contentType, //'application/json'
           ];
+
           $options = [
             'body' => json_encode($params),
             'headers' => $headers
@@ -356,6 +361,23 @@ class YousignLaravel {
           'delivery_mode' => 'email'
         ];
         return $this->doRequest($path, $method, $params, true, AddSignerToSignatureRequestRawResponse::class);
+    }
+
+    /**
+     * activateSignatureRequest
+     * @return CreateSignatureRequestRawResponse
+     */
+    public function activateSignatureRequest() {
+      if (is_null($this->signatureRequest)) {
+        throw new \Exception('Create a Signature Request before');
+      }
+      $method = 'POST';
+      $path = 'signature_requests/' . $this->signatureRequest->id . '/activate';
+
+      //$this->_procedure['config']['webhook'] = $this->_webhook;
+      return $this->doRequest($path, $method, [
+      ], true, ActivateSignatureRequestRawResponse::class, 'application/json', true);
+
     }
 
     /**
