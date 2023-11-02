@@ -1,8 +1,8 @@
 <?php
 
 namespace CarmineRumma\YousignLaravel\Request;
-use CarmineRumma\YousignLaravel\Models\EmailNotification;
-use CarmineRumma\YousignLaravel\Models\ReminderSettings;
+use CarmineRumma\YousignLaravel\DTO\EmailNotification;
+use CarmineRumma\YousignLaravel\DTO\ReminderSettings;
 
 class CreateSignatureRequest
 {

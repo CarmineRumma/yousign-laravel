@@ -1,6 +1,6 @@
 <?php
 namespace CarmineRumma\YousignLaravel\Response;
-use CarmineRumma\YousignLaravel\Models\ReminderSettings;
+use CarmineRumma\YousignLaravel\DTO\ReminderSettings;
 
 class ActivateSignatureRequestRawResponse
 {
@@ -14,11 +14,11 @@ class ActivateSignatureRequestRawResponse
   public string $timezone;
   public ?string $email_custom_note;
   public string $expiration_date;
-  /** @var \CarmineRumma\YousignLaravel\Models\Signers[] */
+  /** @var \CarmineRumma\YousignLaravel\DTO\Signers[] */
   public array $signers;
-  /** @var \CarmineRumma\YousignLaravel\Models\Approvers[] */
+  /** @var \CarmineRumma\YousignLaravel\DTO\Approvers[] */
   public array $approvers;
-  /** @var \CarmineRumma\YousignLaravel\Models\Documents[] */
+  /** @var \CarmineRumma\YousignLaravel\DTO\Documents[] */
   public array $documents;
   public ?string $external_id;
   public ?string $branding_id;

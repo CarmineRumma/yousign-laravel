@@ -15,7 +15,7 @@ use \Symfony\Component\HttpFoundation\File\File;
 class YousignLaravel {
 
     /**
-     * @const BASE_URI
+     * @const string
      */
     const BASE_URI = [
       'production' => "https://api.yousign.com",
@@ -23,13 +23,22 @@ class YousignLaravel {
     ];
 
     /**
-     * @const SUPPORTED_LOCALES
+     * @const string
      */
     const SUPPORTED_LOCALES = ['en', 'fr', 'de', 'it', 'nl', 'es', 'pl'];
 
+    /**
+     * @var string
+     */
+    private $apiKey;
+
+    /**
+     * @var string
+     */
+    private $apiEnv;
+
     protected $baseUrl;
     protected $baseUrlWithoutSlash;
-    protected $apiKey;
 
     /**
      * @var Client
@@ -42,18 +51,6 @@ class YousignLaravel {
     protected $mapper;
 
     protected $locale = 'en';
-
-    protected $_procedure = array(
-        'name' => '',
-        'description' => '',
-        'start' => false,
-        'expiresAt' => null,
-        'template' => false,
-        'ordered' => false,
-        'metadata' => [],
-        'config' => array(),
-        'archive' => false
-    );
 
     /**
      * @var CreateSignatureRequest
@@ -92,11 +89,61 @@ class YousignLaravel {
         $this->apiBaseUrl = env('YOUSIGN_API_URL');
         $this->baseUrlWithoutSlash = substr(env('YOUSIGN_API_URL'), 0, -1);
 
-        $this->client = new Client(['expect' => false]);
+        $this->setApiKey(config('yousign.api_key'));
+        $this->setApiEnv(config('yousign.api_env'));
+        $this->client = new Client([
+          'expect' => false,
+          'base_uri' => $this->getBaseURL(),
+          'headers' => [
+            'Authorization' => "Bearer {$this->apiKey}",
+            'Content-Type' => 'application/json',
+          ]
+        ]);
         $this->mapper = new \JsonMapper();
         $this->mapper->bExceptionOnMissingData = false;
         $this->mapper->bExceptionOnUndefinedProperty = false;
         $this->mapper->bStrictNullTypes = false;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getBaseURL()
+    {
+      return self::BASE_URI[$this->apiEnv];
+    }
+
+    /**
+     * @return string
+     */
+    public function getApiKey()
+    {
+      return $this->apiKey;
+    }
+
+    /**
+     * @param string $apiKey
+     */
+    protected function setApiKey($apiKey)
+    {
+      $this->apiKey = $apiKey;
+    }
+
+
+    /**
+     * @param string $apiEnv
+     */
+    public function setApiEnv($apiEnv)
+    {
+      $this->apiEnv = $apiEnv;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getApiEnv()
+    {
+      return $this->apiEnv;
     }
 
     /**
@@ -114,16 +161,6 @@ class YousignLaravel {
     public function setLocale($str) {
       $this->locale = $str;
       return $this;
-    }
-
-    /**
-     * Set procedure key/value
-     *
-     * @param $apiKey
-     */
-
-    public function setProcedureKeyValue($key, $value) {
-        $this->_procedure[$key] = $value;
     }
 
     /**
@@ -237,12 +274,8 @@ class YousignLaravel {
             $options = array_merge($params, ['headers' => $headers]);
            // dd($options);
           }
-         // $options['debug'] = true;
-          if ($mapToClass == AddSignerToSignatureRequestRawResponse::class) {
-
-            //dd($params);
-          }
-          $response = $this->client->request($method, $baseUrl . '/' . $path, $options);
+          //$response = $this->client->request($method, $baseUrl . '/' . $path, $options);
+          $response = $this->client->request($method, $path, $options);
 
           $contents = $response->getBody()->getContents();
           $contentsObj = json_decode($contents);

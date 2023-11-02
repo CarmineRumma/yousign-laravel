@@ -1,5 +1,5 @@
 <?php
-namespace CarmineRumma\YousignLaravel\Models;
+namespace CarmineRumma\YousignLaravel\DTO;
 
 class Sender
 {

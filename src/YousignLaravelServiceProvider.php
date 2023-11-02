@@ -14,7 +14,9 @@ class YousignLaravelServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
+      $this->publishes([
+        __DIR__.'/../config/yousign.php' => config_path('yousign.php'),
+      ], 'config');
     }
 
     /**
@@ -24,6 +26,12 @@ class YousignLaravelServiceProvider extends ServiceProvider
      */
     public function register()
     {
+      $this->mergeConfigFrom(
+        __DIR__.'/../config/yousign.php', 'yousign'
+      );
+
+      $this->app->alias('yousign.laravel', YousignLaravel::class);
+
       $this->app->bind('yousign.laravel', function($app) {
         return new YousignLaravel();
       });

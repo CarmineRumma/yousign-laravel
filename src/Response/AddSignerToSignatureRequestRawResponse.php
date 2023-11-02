@@ -1,9 +1,9 @@
 <?php
 namespace CarmineRumma\YousignLaravel\Response;
 
-use CarmineRumma\YousignLaravel\Models\CustomText;
-use CarmineRumma\YousignLaravel\Models\Info;
-use CarmineRumma\YousignLaravel\Models\RedirectUrls;
+use CarmineRumma\YousignLaravel\DTO\CustomText;
+use CarmineRumma\YousignLaravel\DTO\Info;
+use CarmineRumma\YousignLaravel\DTO\RedirectUrls;
 
 class AddSignerToSignatureRequestRawResponse
 {
