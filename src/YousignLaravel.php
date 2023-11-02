@@ -71,7 +71,6 @@ class YousignLaravel {
      */
     private $signatureRequest = null;
 
-
     protected $_webhook = array(
 
     );
@@ -149,6 +148,9 @@ class YousignLaravel {
      * @param $apiKey
      */
     public function setLocale($str) {
+      if (!in_array($str, self::SUPPORTED_LOCALES)) {
+        throw new \Exception('Create a Signature Request before');
+      }
       $this->locale = $str;
       return $this;
     }
